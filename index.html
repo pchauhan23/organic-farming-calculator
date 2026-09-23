@@ -1,0 +1,1451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Calculate exact ingredient amounts for natural farming inputs (sulfur, wetting agent, microbial solution and liquid fertilizer) for any batch size.">
+<title>Organic Farming Calculator</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNS41IiBmaWxsPSIjMUY1QjNGIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTIuMiAxMi4yKSBzY2FsZSgwLjk1KSB0cmFuc2xhdGUoLTEyLjIgLTEyLjIpIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMS45IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik01IDE5QzUgMTAuNSAxMC41IDUgMTkuNSA0LjUgMTkgMTMuNSAxMy41IDE5IDUgMTl6Ii8+PHBhdGggZD0iTTUgMTljMi41LTQuNSA1LjUtNy41IDkuNS05LjUiLz48L2c+PC9zdmc+">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Organic Calc">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root {
+    --bg: #EDF1EE;
+    --surface: #FFFFFF;
+    --ink: #14261C;
+    --muted: #55645A;
+    --line: #DAE2DC;
+    --brand: #1F5B3F;
+    --warn: #9B2A1E;
+    --warn-bg: #FDF0ED;
+    --warn-line: #EFC9C2;
+    /* set per product by script */
+    --accent: #F0BE00;
+    --on: #241F00;
+    --tint: #FFF6CC;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 17px/1.5 "Avenir Next", "Segoe UI Variable", "Segoe UI", Roboto, "Noto Sans Devanagari", "Nirmala UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .hero :focus-visible { outline-color: var(--on); }
+  svg { display: block; flex: none; }
+
+  /* ---------- top bar ---------- */
+  .bar { background: #fff; border-bottom: 1px solid var(--line); }
+  .bar-in {
+    max-width: 1000px; margin: 0 auto; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark { width: 40px; height: 40px; border-radius: 12px; background: var(--brand); color: #fff; display: grid; place-items: center; }
+  .brand h1 { margin: 0; font-size: 20px; line-height: 1.1; font-weight: 800; letter-spacing: -0.01em; }
+  .brand p { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); line-height: 1.2; }
+
+  .tools { display: flex; align-items: center; gap: 8px; }
+  #lang {
+    min-height: 46px; padding: 6px 30px 6px 14px; border: 0; border-radius: 999px; background-color: var(--bg);
+    font-weight: 700; font-size: 15px; color: var(--ink); cursor: pointer; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.500 11 1.500' fill='none' stroke='%2314261C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .seg { display: inline-flex; background: var(--bg); border-radius: 999px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 8px 14px; min-height: 40px; border-radius: 999px; font-weight: 600; font-size: 15px; color: var(--muted); }
+  .seg button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+
+  /* ---------- layout ---------- */
+  main { max-width: 1000px; margin: 0 auto; padding: 16px 16px 32px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  #panel {
+    display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "hero" "recipe" "spray" "method" "safety" "src";
+  }
+  .a-hero { grid-area: hero; } .a-recipe { grid-area: recipe; } .a-spray { grid-area: spray; }
+  .a-method { grid-area: method; } .a-safety { grid-area: safety; } .a-src { grid-area: src; }
+  @media (min-width: 700px) { .picker { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 880px) {
+    #panel {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start;
+      grid-template-areas: "hero recipe" "spray recipe" "method safety" "src src";
+    }
+  }
+  @media (max-width: 520px) {
+    .tools { width: 100%; }
+    .seg { flex: 1; }
+    .seg button { flex: 1; padding: 8px 6px; }
+  }
+
+  /* ---------- collection tabs ---------- */
+  .gtabs { display: flex; gap: 6px; border-bottom: 2px solid var(--line); }
+  .gtab {
+    flex: 1; min-height: 50px; padding: 10px 8px; background: transparent; border: 0;
+    border-bottom: 4px solid transparent; margin-bottom: -2px;
+    font-weight: 800; font-size: 17px; color: var(--muted);
+  }
+  .gtab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brand); }
+  .group-note { margin: -4px 0 0; color: var(--muted); font-size: 15px; }
+  .group-note:empty { display: none; }
+
+  /* ---------- product picker ---------- */
+  .pbtn {
+    text-align: left; min-height: 72px; padding: 10px 12px;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
+    display: flex; align-items: center; gap: 10px;
+    transition: background-color .2s ease, border-color .2s ease;
+  }
+  .pbtn .ico { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--bg); color: var(--ink); }
+  .pbtn { min-width: 0; padding: 10px; }
+  .pbtn .ptxt { min-width: 0; }
+  .pbtn b { display: block; font-size: 17px; line-height: 1.1; overflow-wrap: anywhere; }
+  .pbtn span.nm { display: block; font-size: 13.5px; line-height: 1.25; color: var(--muted); }
+  .pbtn[aria-pressed="true"] { background: var(--bg-c); color: var(--tx-c); border-color: var(--bg-c); }
+  .pbtn[aria-pressed="true"] .ico { background: rgba(255,255,255,.28); color: var(--tx-c); }
+  .pbtn[aria-pressed="true"] span.nm { color: var(--tx-c); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; overflow: hidden; border-radius: 20px; padding: 20px;
+    background: var(--accent); color: var(--on);
+    transition: background-color .25s ease, color .25s ease;
+  }
+  .hero-mark { position: absolute; right: -34px; top: -38px; opacity: .12; pointer-events: none; }
+  .hero-top { position: relative; display: flex; align-items: center; gap: 14px; }
+  .hero-top .code { font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.02em; }
+  .hero-top h2 { margin: 0; font-size: 19px; line-height: 1.2; }
+  .hero-top h2.solo { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+  .hero-ico { width: 56px; height: 56px; border-radius: 16px; background: rgba(255,255,255,.3); display: grid; place-items: center; flex: none; }
+  .hero-top p { margin: 2px 0 0; font-size: 15px; line-height: 1.3; }
+  .hero-q { position: relative; display: block; margin: 20px 0 8px; font-weight: 700; font-size: 17px; }
+  .amount { position: relative; display: flex; align-items: center; gap: 10px; }
+  .amount input {
+    flex: 1; min-width: 0; min-height: 60px; padding: 6px 16px; border: 0; border-radius: 14px;
+    background: #fff; color: var(--ink); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .unit { font-size: 24px; font-weight: 800; min-width: 44px; }
+  .chips { position: relative; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip {
+    min-height: 42px; padding: 4px 16px; border-radius: 999px; font-weight: 700; font-size: 16px;
+    background: rgba(255,255,255,.22); border: 2px solid var(--on); color: var(--on);
+  }
+  .chip[aria-pressed="true"] { background: var(--on); color: var(--accent); }
+  .check { position: relative; display: flex; align-items: center; gap: 12px; margin-top: 14px; min-height: 44px; cursor: pointer; font-weight: 600; }
+  .check input { width: 24px; height: 24px; accent-color: var(--on); flex: none; }
+
+  /* ---------- cards ---------- */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .card h2 { margin: 0; font-size: 20px; line-height: 1.25; letter-spacing: -0.005em; }
+  .card h3 { margin: 18px 0 2px; font-size: 15px; color: var(--muted); font-weight: 700; }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .actions { display: flex; gap: 8px; flex: none; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 6px 14px;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 999px; font-weight: 700; font-size: 15px;
+  }
+  .btn:hover { border-color: var(--ink); }
+  .fine { color: var(--muted); font-size: 15px; margin: 12px 0 0; line-height: 1.45; }
+  .empty { color: var(--warn); font-weight: 600; margin: 8px 0 0; }
+
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .name { flex: 1; font-weight: 600; }
+  .name small { display: block; font-weight: 400; color: var(--muted); font-size: 14px; line-height: 1.3; margin-top: 1px; }
+  .amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .amt b { display: block; font-size: 23px; line-height: 1.15; font-weight: 800; letter-spacing: -0.01em; }
+  .amt small { color: var(--muted); font-size: 14px; }
+
+  /* ---------- spray ---------- */
+  .field { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .field input {
+    flex: 1; min-width: 0; min-height: 54px; padding: 6px 14px; font-size: 24px; font-weight: 800;
+    border: 2px solid var(--line); border-radius: 12px; background: #fff; font-variant-numeric: tabular-nums;
+  }
+  .field input:focus { border-color: var(--ink); outline: none; }
+  .field .unit { font-size: 20px; }
+  .ratio { display: flex; justify-content: space-between; align-items: baseline; margin-top: 18px; font-weight: 700; }
+  .ratio span:last-child { font-size: 26px; font-weight: 800; }
+  input[type="range"] { width: 100%; height: 44px; accent-color: var(--brand); margin: 2px 0 0; }
+  .range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; margin-top: -6px; }
+  .stat { margin-top: 16px; background: var(--tint); border-radius: 14px; padding: 6px 16px 14px; }
+  .stat .row { border-color: rgba(20,38,28,.12); }
+  .stat .fine { margin-top: 0; color: var(--ink); }
+
+  /* ---------- method and tips ---------- */
+  ol.steps { list-style: none; counter-reset: s; margin: 14px 0 0; padding: 0; display: grid; gap: 14px; }
+  ol.steps li { counter-increment: s; position: relative; padding-left: 44px; min-height: 32px; }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: -1px; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: var(--on); display: grid; place-items: center; font-weight: 800; font-size: 16px;
+  }
+  ul.tips { margin: 12px 0 0; padding-left: 20px; display: grid; gap: 9px; }
+  ul.tips li::marker { color: var(--brand); }
+
+  .safety { background: var(--warn-bg); border-color: var(--warn-line); }
+  .safety .head { display: flex; align-items: center; gap: 10px; color: var(--warn); }
+  .safety ul { margin: 12px 0 0; padding-left: 20px; display: grid; gap: 8px; }
+
+  .src a { color: var(--brand); font-weight: 700; }
+  .src ul { margin: 10px 0 0; padding-left: 20px; }
+  .disclaimer { font-size: 14px; color: var(--muted); margin: 12px 0 0; line-height: 1.45; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px; font-weight: 600;
+    transition: opacity .2s ease, transform .2s ease; z-index: 10;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 400px) {
+    .pbtn { padding: 8px; gap: 8px; }
+    .pbtn .ico { width: 28px; height: 28px; }
+    .pbtn .ico svg { width: 16px; height: 16px; }
+    .pbtn b { font-size: 14.5px; overflow-wrap: break-word; }
+    .pbtn .nm { font-size: 12.5px; }
+    .gtab { font-size: 15.5px; }
+  }
+
+  @media (max-width: 340px) { .pbtn .ico { display: none; } }
+  html:lang(th) body { line-height: 1.7; }
+  html:lang(vi) body { line-height: 1.55; }
+  @media (prefers-reduced-motion: reduce) {
+    .hero, .pbtn, #toast { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="brand">
+      <div class="mark" id="brand-mark"></div>
+      <div>
+        <h1 id="brand-title">Organic Farming Calculator</h1>
+        <p id="brand-tag">Exact amounts for any batch size</p>
+      </div>
+    </div>
+    <div class="tools">
+    <select id="lang" aria-label="Language"></select>
+    <div class="seg" role="group" aria-label="Units">
+      <button type="button" data-sys="metric" title="Liters and kilograms">L · kg</button>
+      <button type="button" data-sys="us" title="US gallons and pounds">US gal</button>
+      <button type="button" data-sys="imp" title="Imperial (UK) gallons and pounds">UK gal</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="gtabs" id="groups" role="tablist" aria-label="Recipe collections"></div>
+  <p class="group-note" id="group-note"></p>
+  <div class="picker" id="products" role="group" aria-label="Choose a product"></div>
+  <div id="panel"></div>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript>This calculator needs JavaScript turned on.</noscript>
+
+<script>
+/* ------------------------------------------------------------------
+   Your settings
+   Put your email between the quotes to show an "Email feedback" button.
+   Leave it empty ('') to hide the button.
+   ------------------------------------------------------------------ */
+const FEEDBACK_EMAIL = '';
+
+
+
+/* ------------------------------------------------------------------
+   Recipe data
+   Every recipe is stored as amounts for a fixed "basis" size and scaled
+   linearly. Item types: 'm' = mass in kg, 'v' = volume in liters,
+   'n' = a count (with a unit label), 'x' = fixed text such as "A handful".
+   sizeType: 'v' (liters, default) or 'm' (kg, used when the recipe is
+   based on an amount of seed or dung instead of a volume).
+   ------------------------------------------------------------------ */
+const GROUPS = {
+  jadam: { label: 'JADAM recipes', items: ['js', 'jwa', 'jms', 'jlf'] },
+  india: { label: 'Indian traditional', items: ['jeevamrit', 'beejamrit', 'ghana', 'panchagavya', 'neemastra', 'brahmastra', 'agniastra', 'dashaparni'] }
+};
+
+const S_CAUSTIC = name => [
+  `${name} causes chemical burns. Mixing it with water gets very hot.`,
+  'Wear goggles, rubber gloves, boots, a long-sleeve jacket and a mask. Work outdoors.',
+  'Use heat-resistant plastic containers. Never aluminum.',
+  'Keep children and animals away. Label every container.'
+];
+const S_FERMENT = [
+  'Wear gloves and wash your hands after handling.',
+  'Fermenting mixes can smell strong. Keep them away from your house.',
+  'Label every container and keep it out of reach of children.'
+];
+const S_COW = [
+  'Wear gloves and wash your hands well after handling dung and urine.',
+  'Wash vegetables and fruit well before eating. Do not spray on produce close to harvest.',
+  'Cover drums with a mesh so flies cannot lay eggs. Label every container and keep it away from children.'
+];
+const S_TOXIC = [
+  'Ingredients like datura, tobacco and chili are poisonous or irritating. Wear gloves, a mask and eye protection.',
+  'Boil and mix outdoors. Do not use kitchen pots for it afterwards.',
+  'Keep it away from children and animals. Label every container clearly.',
+  'Wash produce well. Do not spray on produce close to harvest.'
+];
+
+const NITI = ['Natural farming components (NITI Aayog)', 'https://naturalfarming.niti.gov.in/components/'];
+const GUJ = ['Gujarat natural farming concept paper', 'https://btm.gujarat.gov.in/Portal/Document/1_152_1_A-Concept-Paper-on-Natural-Farming.pdf'];
+
+const PRODUCTS = {
+  /* ---------------- JADAM ---------------- */
+  js: {
+    group: 'jadam', code: 'JS', label: 'JS', tag: 'Sulfur', name: 'JADAM Sulfur', role: 'Fungicide and insecticide',
+    bg: '#F0BE00', tx: '#241F00', tint: '#FFF4C2',
+    basis: 100, def: 10,
+    sizeLabel: 'How much JS do you want to make?',
+    hasHot: true,
+    items: [
+      { g: 'Dry ingredients', n: 'Sulfur', per: 25, t: 'm' },
+      { g: 'Dry ingredients', n: 'Red clay powder', per: 0.5, t: 'm' },
+      { g: 'Dry ingredients', n: 'Phyllite powder', per: 0.5, t: 'm' },
+      { g: 'Dry ingredients', n: 'Sea salt', per: 1.5, t: 'm' },
+      { g: 'Dry ingredients', n: 'Caustic soda (NaOH)', per: 20, t: 'm' },
+      { g: 'Water', n: 'Start water', per: 50, hotPer: 54, t: 'v', note: 'Measure exactly' },
+      { g: 'Water', n: 'Top-up water', per: 32, t: 'v', note: 'Added after the sulfur has dissolved' }
+    ],
+    dil: { min: 100, max: 1000, step: 50, def: 500, note: 'JADAM suggests about 100× to 1000×.' },
+    tipsTitle: 'Key points',
+    tips: [
+      'Add the ingredients in the exact order given in JADAM\'s official steps (link below).',
+      'Grape, persimmon, walnut, squash and greenhouse crops are sensitive. Test a few leaves first.',
+      'Use a heat-resistant plastic (PE) container. Never aluminum.',
+      'Sulfur melts once the mix passes about 80 °C. Stir until no clumps remain at the bottom.',
+      'After the top-up water, let it settle for a day or two, then filter out the sediment.',
+      'Store above −5 °C (23 °F).'
+    ],
+    safety: S_CAUSTIC('Caustic soda'),
+    links: [['Official JS recipe (jadam.kr)', 'https://en.jadam.kr/news/articleView.html?idxno=10338']],
+    basisNote: 'Scaled from JADAM\'s 110 L recipe. The top-up water comes from the 10 L version of the recipe.'
+  },
+  jwa: {
+    group: 'jadam', code: 'JWA', label: 'JWA', tag: 'Wetting Agent', name: 'JADAM Wetting Agent', role: 'Natural soap that helps sprays stick',
+    bg: '#4FB3CE', tx: '#04222D', tint: '#DDF1F7',
+    basis: 100, def: 10,
+    sizeLabel: 'How much JWA do you want to make?',
+    items: [
+      { g: 'Step 1: dissolve', n: 'Potassium hydroxide (KOH, 90%)', per: 3.2, t: 'm', note: 'Also called caustic potash' },
+      { g: 'Step 1: dissolve', n: 'Soft water', per: 2.5, t: 'v', note: 'Measure exactly. Rain or distilled water.' },
+      { g: 'Step 2: mix', n: 'Canola oil', per: 18, t: 'v' },
+      { g: 'Later', n: 'Water', per: 80, t: 'v', note: 'From the 10 L version. Check when to add it in the official steps.' }
+    ],
+    dil: { min: 30, max: 100, step: 5, def: 50, note: 'Published range is about 30× to 100×.' },
+    steps: [
+      'Dissolve the KOH in the soft water inside a closed, heat-resistant container. It gets very hot.',
+      'Add the canola oil. Mix with an electric drill for about 10 minutes, until it looks like thin mayonnaise. Hand mixing does not work.',
+      'Close the lid and let it rest for 3 days. It should set like butter.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: [
+      'Use soft water only. Hard tap water ruins it.',
+      'Avoid spraying in strong sun. Skip sweet peas, nasturtiums and delicate ferns.'
+    ],
+    safety: S_CAUSTIC('Potassium hydroxide'),
+    links: [['Official JWA recipe (jadam.kr)', 'https://en.jadam.kr/news/articleView.html?idxno=10336']],
+    basisNote: 'Scaled from JADAM\'s 110 L recipe (3.2 kg KOH, 2.5 L water, 18 L canola oil).'
+  },
+  jms: {
+    group: 'jadam', code: 'JMS', label: 'JMS', tag: 'Microbial', name: 'JADAM Microbial Solution', role: 'Live soil microbes from leaf mold',
+    bg: '#8B5A33', tx: '#FFFFFF', tint: '#F1E5DA',
+    basis: 100, def: 100,
+    sizeLabel: 'How much water do you want to culture?',
+    items: [
+      { g: 'Ingredients', n: 'Leaf mold soil', per: 0.1, t: 'm', note: 'From a nearby forest floor' },
+      { g: 'Ingredients', n: 'Boiled potato', per: 0.2, t: 'm' },
+      { g: 'Ingredients', n: 'Sea salt', per: 0.1, t: 'm' },
+      { g: 'Ingredients', n: 'Water without chlorine', per: 100, t: 'v', note: 'Let tap water sit 24 hours' }
+    ],
+    dil: { min: 5, max: 50, step: 5, def: 10, note: 'Commonly diluted about 10× before use.' },
+    steps: [
+      'Boil the potato and mash it. Put it and the leaf mold in a mesh bag.',
+      'Dissolve the salt in the water. Hang the bag in it and knead until the water turns cloudy and brown.',
+      'Cover loosely and keep it around 18 to 25 °C.',
+      'In 1 to 3 days a layer of foam forms on top. Use it within a day or two.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: ['JMS does not store. Make it fresh each time.'],
+    safety: S_FERMENT,
+    links: [['JMS lecture (jadam.kr)', 'https://en.jadam.kr/news/articleView.html?idxno=8350']],
+    basisNote: 'Based on the commonly cited original recipe (500 L water, 0.5 kg leaf mold, 1 kg potato, 0.5 kg salt). Small-batch recipes online differ, so treat this as a starting point.'
+  },
+  jlf: {
+    group: 'jadam', code: 'JLF', label: 'JLF', tag: 'Liquid Fertilizer', name: 'JADAM Liquid Fertilizer', role: 'Fermented plant fertilizer',
+    bg: '#2F7D3A', tx: '#FFFFFF', tint: '#DFF0DC',
+    basis: 100, def: 200,
+    sizeLabel: 'How big is your container?',
+    items: [
+      { g: 'Fill the container', n: 'Chopped plant material', per: 100 / 3, t: 'v', note: 'Loosely packed. About one third of the container.' },
+      { g: 'Fill the container', n: 'Water without chlorine', per: 200 / 3, t: 'v', note: 'Fill the rest' }
+    ],
+    dil: { min: 50, max: 500, step: 10, def: 100, note: 'JADAM uses about 100×. Weaker (200× to 500×) for seedlings.' },
+    steps: [
+      'Chop the plant material small.',
+      'Fill about one third of the container with it, loosely packed.',
+      'Fill the rest with water without chlorine. Cover loosely.',
+      'Leave it for weeks to months. It is ready when it smells earthy instead of foul.',
+      'Dilute before use.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: ['Best material: leftovers from the same crop, then wild grass and weeds.'],
+    safety: S_FERMENT,
+    links: [['JADAM website', 'https://en.jadam.kr']],
+    basisNote: 'JLF is a rule of thumb, not an exact recipe. The one third rule comes from common practice among JADAM growers.'
+  },
+
+  /* ---------------- Indian traditional ---------------- */
+  jeevamrit: {
+    group: 'india', code: '', label: 'Jeevamrit', tag: 'Soil booster', name: 'Jeevamrit', role: 'Fermented dung and urine that feeds soil microbes',
+    bg: '#C8842B', tx: '#231300', tint: '#F7E8D2',
+    basis: 200, def: 200, picks: [20, 50, 100, 200, 400],
+    sizeLabel: 'How much Jeevamrit do you want to make?',
+    items: [
+      { g: 'In the drum', n: 'Fresh desi cow dung', per: 10, t: 'm' },
+      { g: 'In the drum', n: 'Desi cow urine', per: 7.5, t: 'v', note: 'Sources say 5 to 10 L. The middle is used here.' },
+      { g: 'In the drum', n: 'Jaggery', per: 2, t: 'm' },
+      { g: 'In the drum', n: 'Pulse flour (besan)', per: 2, t: 'm' },
+      { g: 'In the drum', n: 'Lime', per: 0.05, t: 'm', note: 'Some guides leave it out' },
+      { g: 'In the drum', n: 'Soil from the farm', per: 1, t: 'm', note: 'From under an old tree or the field bund. No chemicals.' },
+      { g: 'In the drum', n: 'Water', per: 200, t: 'v' }
+    ],
+    coverage: { per: 200, text: 'The usual dose is about 200 L per acre, applied every 15 days with irrigation.' },
+    dil: { min: 10, max: 30, step: 1, def: 17, note: 'For spraying leaves, Gujarat\'s practices use about 7.5 L in 120 L of water. In the soil it is used undiluted.' },
+    steps: [
+      'Mix everything in the water in a drum.',
+      'Keep it in the shade for 48 hours. Stir with a wooden stick each morning and evening.',
+      'Apply every fortnight, sprayed on the crop or mixed into irrigation water.',
+      'Use it within about 15 days.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: ['Use dung and urine from native (desi) cows.'],
+    safety: S_COW,
+    links: [NITI],
+    basisNote: 'From the NITI Aayog natural farming portal (APCNF). Other guides use slightly different amounts.'
+  },
+  beejamrit: {
+    group: 'india', code: '', label: 'Beejamrit', tag: 'Seed treatment', name: 'Beejamrit', role: 'Coating that protects seeds and young roots',
+    bg: '#7CB342', tx: '#10230A', tint: '#E6F1D8',
+    sizeType: 'm', basis: 100, def: 10, picks: [1, 5, 10, 50, 100], picksLb: [2, 10, 25, 100, 250],
+    sizeLabel: 'How much seed do you want to treat?',
+    titleFn: sz => `You need to treat ${sz} of seed`,
+    items: [
+      { g: 'Ingredients', n: 'Desi cow dung', per: 5, t: 'm', note: 'Tied in a cloth bundle' },
+      { g: 'Ingredients', n: 'Desi cow urine', per: 5, t: 'v' },
+      { g: 'Ingredients', n: 'Lime', per: 0.05, t: 'm', note: 'Dissolved in a little water overnight' },
+      { g: 'Ingredients', n: 'Soil from the field bund', per: 1, t: 'm' },
+      { g: 'Ingredients', n: 'Water', per: 20, t: 'v' }
+    ],
+    use: {
+      title: 'How to use it',
+      list: [
+        'Coat the seeds by hand with Beejamrit, dry them well in the shade, then sow.',
+        'For legumes with thin seed coats, dip them quickly and let them dry.',
+        'For rice seedlings, dip the roots for 30 minutes before transplanting.'
+      ]
+    },
+    steps: [
+      'Tie the dung in a cloth and hang it in the water for up to 12 hours.',
+      'Mix the lime in a little water and leave it overnight.',
+      'Next morning, squeeze the dung bundle in the water 3 times.',
+      'Add the soil and stir. Then add the urine and the lime water and stir again.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: ['Prepare it fresh and use it the same day.'],
+    safety: S_COW,
+    links: [NITI],
+    basisNote: 'From the NITI Aayog natural farming portal. The amounts are for 100 kg of seed.'
+  },
+  ghana: {
+    group: 'india', code: '', label: 'Ghana-jeevamrit', tag: 'Dry soil booster', name: 'Ghanajeevamrit', role: 'Dry, solid form of Jeevamrit, worked into the soil',
+    bg: '#B79A7F', tx: '#241A10', tint: '#EFE5DB',
+    sizeType: 'm', basis: 100, def: 100, picks: [10, 25, 50, 100, 200],
+    sizeLabel: 'How much dry cow dung do you have?',
+    titleFn: sz => `You need for ${sz} of dry dung`,
+    items: [
+      { g: 'Ingredients', n: 'Well-dried desi cow dung', per: 100, t: 'm' },
+      { g: 'Ingredients', n: 'Pulse flour (besan)', per: 1, t: 'm' },
+      { g: 'Ingredients', n: 'Jaggery', per: 1, t: 'm', note: 'Dissolved in water' },
+      { g: 'Ingredients', n: 'Desi cow urine', t: 'x', text: 'A little', note: 'Just enough to moisten the dung' },
+      { g: 'Ingredients', n: 'Soil from around plant roots', t: 'x', text: 'A handful' }
+    ],
+    coverage: { per: 100, text: 'The usual dose is about 100 kg per acre at sowing. Some state guides use 200 kg before final ploughing.' },
+    use: {
+      title: 'How to use it',
+      list: [
+        'Spread it on the field at sowing, or as a top dressing around plants.',
+        'Keep it dry until you use it.'
+      ]
+    },
+    steps: [
+      'Spread the dry dung in a thin layer on the ground.',
+      'Sprinkle on a little cow urine and the pulse flour.',
+      'Dissolve the jaggery in water and sprinkle it over. Add a handful of soil.',
+      'Mix well and shape into small balls (laddus). Dry them in the shade.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: ['Dried Ghanajeevamrit keeps for a few months, so it is easy to store and carry.'],
+    safety: S_COW,
+    links: [['Ghanajeevamrit guide', 'https://innovativeagriculture.in/ghanajeevamrit/'], ['Gujarat natural farming practices', 'https://naturalfarming.niti.gov.in/wp-content/uploads/2022/11/Package-of-Practices-Gujarat-.pdf']],
+    basisNote: 'Dung, pulse flour and jaggery amounts are from a published guide. The urine amount is not fixed, so add only enough to moisten the dung.'
+  },
+  panchagavya: {
+    group: 'india', code: '', label: 'Panchagavya', tag: 'Growth tonic', name: 'Panchagavya', role: 'Fermented mix of five cow products, sprayed on leaves',
+    bg: '#E0785A', tx: '#2A0E05', tint: '#FADFD6',
+    basis: 40, def: 40, picks: [5, 10, 20, 40, 80],
+    sizeLabel: 'How much Panchagavya do you want to make? (about)',
+    items: [
+      { g: 'Stage 1: 3 days', n: 'Fresh desi cow dung', per: 7, t: 'm' },
+      { g: 'Stage 1: 3 days', n: 'Desi cow ghee', per: 1, t: 'm' },
+      { g: 'Stage 2: 15 days', n: 'Desi cow urine', per: 10, t: 'v' },
+      { g: 'Stage 2: 15 days', n: 'Water', per: 10, t: 'v' },
+      { g: 'Stage 3: about 30 days', n: 'Desi cow milk', per: 3, t: 'v' },
+      { g: 'Stage 3: about 30 days', n: 'Desi cow curd', per: 2, t: 'v' },
+      { g: 'Stage 3: about 30 days', n: 'Tender coconut water', per: 3, t: 'v' },
+      { g: 'Stage 3: about 30 days', n: 'Jaggery', per: 3, t: 'm' },
+      { g: 'Stage 3: about 30 days', n: 'Ripe bananas', per: 12, t: 'n', unit: 'bananas', note: 'Well ripened and mashed' }
+    ],
+    dil: { min: 20, max: 50, step: 1, def: 33, note: 'The usual spray is 3 L per 100 L of water (3%). Use weaker, about 2%, on leafy greens.' },
+    steps: [
+      'Mix the dung and ghee well. Stir them morning and evening for 3 days.',
+      'Add the urine and water. Stir morning and evening for 15 days.',
+      'Add the milk, curd, coconut water, jaggery and mashed bananas.',
+      'Stir twice a day for about 30 days, then filter through cloth.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: [
+      'Keep it covered with a mesh so flies cannot lay eggs in it.',
+      'Filter well before spraying so the sprayer does not clog.'
+    ],
+    safety: S_COW,
+    links: [['TNAU Agritech Portal', 'https://agritech.tnau.ac.in/org_farm/orgfarm_panchakavya.html']],
+    basisNote: 'Follows the TNAU recipe. The finished volume is about 40 L and only approximate. Other guides use different amounts, for example 3 kg of dung.'
+  },
+  neemastra: {
+    group: 'india', code: '', label: 'Neemastra', tag: 'Sucking pests', name: 'Neemastra', role: 'Neem-based spray for aphids, whitefly and small caterpillars',
+    bg: '#00796B', tx: '#FFFFFF', tint: '#D6EEEA',
+    basis: 200, def: 200, picks: [20, 50, 100, 200],
+    sizeLabel: 'How much Neemastra do you want to make?',
+    items: [
+      { g: 'In the drum', n: 'Water', per: 200, t: 'v' },
+      { g: 'In the drum', n: 'Desi cow urine', per: 10, t: 'v' },
+      { g: 'In the drum', n: 'Desi cow dung', per: 2, t: 'm' },
+      { g: 'In the drum', n: 'Neem leaf paste', per: 10, t: 'm', note: 'Or neem seed pulp' }
+    ],
+    dil: { min: 15, max: 40, step: 5, def: 20, note: 'About 3.5% to 5% is common. 5 L per 100 L of water is 20×.' },
+    steps: [
+      'Add the urine, dung and neem paste to the water.',
+      'Stir clockwise with a long stick. Cover with a gunny bag and keep it in the shade, away from sun and rain.',
+      'Stir every morning and evening. It is ready in 48 hours.',
+      'Filter through muslin cloth before use.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: [
+      'Spray in the late afternoon or evening, when helpful insects are not active.',
+      'Fresh is best. The Gujarat paper says it keeps for up to 6 months.'
+    ],
+    safety: S_COW,
+    links: [GUJ, NITI],
+    basisNote: 'Based on the 200 L version in the Gujarat concept paper. Palekar\'s original uses 100 L water, 5 kg dung, 5 L urine and 5 kg neem leaves.'
+  },
+  brahmastra: {
+    group: 'india', code: '', label: 'Brahmastra', tag: 'Caterpillars', name: 'Brahmastra', role: 'Boiled leaf and urine spray for caterpillars and borers',
+    bg: '#6A4C93', tx: '#FFFFFF', tint: '#E7DFF1',
+    basis: 20, def: 20, picks: [5, 10, 20, 50],
+    sizeLabel: 'How much Brahmastra do you want to make?',
+    items: [
+      { g: 'Cow urine', n: 'Desi cow urine', per: 20, t: 'v' },
+      { g: 'Leaf pastes', n: 'Neem leaves', per: 2, t: 'm' },
+      { g: 'Leaf pastes', n: 'Karanj leaves', per: 2, t: 'm' },
+      { g: 'Leaf pastes', n: 'Custard apple leaves', per: 2, t: 'm' },
+      { g: 'Leaf pastes', n: 'Castor leaves', per: 2, t: 'm' },
+      { g: 'Leaf pastes', n: 'Datura leaves', per: 2, t: 'm', note: 'Poisonous. Wear gloves.' }
+    ],
+    dil: { min: 12, max: 50, step: 1, def: 33, note: 'Sprays use 2 to 3 L per 100 L of water. A soil drench for nematodes uses 8 L per 100 L (12×).' },
+    steps: [
+      'Grind each kind of leaf into a fine paste.',
+      'Put the urine in a vessel and mix in all the pastes.',
+      'Boil on a small flame until one or two foams rise. Stir clockwise and keep it covered.',
+      'Stop heating after the second foam and let it cool for 48 hours.',
+      'Filter through muslin cloth. Store in a shaded container.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: [
+      'Some guides use other leaves, such as papaya, pomegranate and guava.',
+      'Store it out of the sun. Guides say it keeps up to 6 months.'
+    ],
+    safety: S_TOXIC,
+    links: [NITI],
+    basisNote: 'From the NITI Aayog portal. Its ingredient list and steps differ slightly on castor and datura, so all five leaves are included here.'
+  },
+  agniastra: {
+    group: 'india', code: '', label: 'Agniastra', tag: 'Borers and worms', name: 'Agniastra', role: 'Fiery neem, chili and garlic spray for borers and worms',
+    bg: '#D84315', tx: '#FFFFFF', tint: '#FBDDD2',
+    basis: 20, def: 20, picks: [5, 10, 20, 50],
+    sizeLabel: 'How much Agniastra do you want to make?',
+    items: [
+      { g: 'Ingredients', n: 'Desi cow urine', per: 20, t: 'v' },
+      { g: 'Ingredients', n: 'Neem leaf paste', per: 2, t: 'm' },
+      { g: 'Ingredients', n: 'Tobacco powder', per: 0.5, t: 'm', note: 'Poisonous. Wear gloves and a mask.' },
+      { g: 'Ingredients', n: 'Green chili paste', per: 0.5, t: 'm' },
+      { g: 'Ingredients', n: 'Garlic paste', per: 0.25, t: 'm' },
+      { g: 'Ingredients', n: 'Turmeric powder', per: 0.2, t: 'm' }
+    ],
+    dil: { min: 20, max: 40, step: 5, def: 30, note: '6 to 8 L in 200 L of water (25× to 33×). Use the stronger mix for heavier attacks.' },
+    steps: [
+      'Mix everything in the urine and stir clockwise.',
+      'Cover and boil until it foams.',
+      'Take it off the fire and keep it in the shade for 48 hours. Stir twice a day.',
+      'Filter through muslin cloth. It keeps for about 3 months.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: ['Use it against borers and worms in stems and fruit.'],
+    safety: S_TOXIC,
+    links: [NITI],
+    basisNote: 'Solid amounts are from the NITI Aayog portal. The portal page prints 200 L of urine, but journals citing it use 20 L, which is used here.'
+  },
+  dashaparni: {
+    group: 'india', code: '', label: 'Dashaparni', tag: 'All pests', name: 'Dashaparni Ark', role: 'Ten-leaf fermented extract for many pests and diseases',
+    bg: '#3F51B5', tx: '#FFFFFF', tint: '#DDE1F4',
+    basis: 200, def: 200, picks: [20, 50, 100, 200],
+    sizeLabel: 'How much Dashaparni do you want to make?',
+    items: [
+      { g: 'Day 1: the base', n: 'Water', per: 200, t: 'v' },
+      { g: 'Day 1: the base', n: 'Desi cow urine', per: 20, t: 'v' },
+      { g: 'Day 1: the base', n: 'Desi cow dung', per: 2, t: 'm' },
+      { g: 'Day 1: spices', n: 'Turmeric powder', per: 0.5, t: 'm' },
+      { g: 'Day 1: spices', n: 'Ginger paste', per: 0.2, t: 'm' },
+      { g: 'Day 1: spices', n: 'Asafoetida (hing)', per: 0.01, t: 'm' },
+      { g: 'Day 2', n: 'Tobacco powder', per: 1, t: 'm', note: 'Poisonous. Wear gloves and a mask.' },
+      { g: 'Day 2', n: 'Green chili paste', per: 2, t: 'm' },
+      { g: 'Day 2', n: 'Garlic paste', per: 0.5, t: 'm' },
+      { g: 'Day 3: leaves', n: 'Leaf paste, 10 kinds', per: 20, t: 'm', note: '2 kg of each kind, such as neem, karanj, custard apple, castor and papaya' }
+    ],
+    dil: { min: 20, max: 40, step: 5, def: 30, note: '6 to 8 L in 200 L of water (3% to 4%).' },
+    steps: [
+      'Add the urine and dung to the water. Cover and leave for 2 hours.',
+      'Add the turmeric, ginger and asafoetida. Stir clockwise, cover and leave overnight.',
+      'Next morning add the tobacco, chili and garlic. Stir, cover and leave 24 hours in the shade.',
+      'Add the ten leaf pastes. Stir and cover with a gunny bag.',
+      'Ferment for 30 to 40 days, stirring twice a day. Then filter through muslin cloth.'
+    ],
+    tipsTitle: 'Good to know',
+    tips: [
+      'It can replace Neemastra, Brahmastra and Agniastra when you have the leaves.',
+      'Any ten kinds of pest-repelling leaves can be used. Avoid leaves your animals eat.'
+    ],
+    safety: S_TOXIC,
+    links: [NITI, GUJ],
+    basisNote: 'Follows the Andhra Pradesh natural farming method. Turmeric, ginger and chili amounts differ between guides, so check with your state programme.'
+  }
+};
+
+/* ------------------------------------------------------------------
+   Languages
+   To add a language: copy the `hi` block in UI and HI, translate it,
+   then add the language to LANGS. Anything missing falls back to English.
+   ------------------------------------------------------------------ */
+const LANGS = {
+  en: 'English', es: 'Español', pt: 'Português', fr: 'Français', de: 'Deutsch', nl: 'Nederlands',
+  ru: 'Русский', zh: '中文', ko: '한국어', ja: '日本語', id: 'Bahasa Indonesia', vi: 'Tiếng Việt', th: 'ไทย', hi: 'हिन्दी'
+};
+// Languages whose text is in lang/<code>.js and loaded when chosen (English and Hindi are built in).
+const BUILT_IN = ['en', 'hi'];
+
+const UI = {
+  en: {
+    title: 'Organic Farming Calculator', tagline: 'Exact amounts for any batch size', offline: 'Works offline',
+    groups: { jadam: 'JADAM recipes', india: 'Indian traditional' },
+    indiaNote: 'Natural farming methods documented by NITI Aayog and state agricultural universities. They use dung and urine from native (desi) cows.',
+    hot: 'Water is hotter than 27 °C (80 °F)', hotNote: 'Adjusted for warm water',
+    copy: 'Copy', share: 'Share', copied: 'Recipe copied', copyFail: 'Could not copy', enterFirst: 'Enter an amount first',
+    copyAria: 'Copy recipe', shareAria: 'Share recipe',
+    yourRecipe: 'Your recipe', enterAmount: 'Enter how much you want to make.',
+    need: (sz, name) => `You need for ${sz} of ${name}`,
+    covers: (n, a) => `This covers about ${n} acre${a === 1 ? '' : 's'}.`,
+    sprayTitle: 'Mixing it for spraying', tankHelp: 'Size of your sprayer or tank.', tankAria: u => `Sprayer size in ${u}`,
+    dilution: 'Dilution', dilAria: 'Dilution ratio', stronger: 'stronger', weaker: 'weaker', enterTank: 'Enter your sprayer size.',
+    conc: name => `${name} concentrate`, fillTo: tank => `Then fill with water up to ${tank}`,
+    batchLine: (a, b, n) => `Your batch of ${a} makes about ${b} of ready-to-spray mix at ${n}×.`,
+    method: 'Method', safety: 'Safety', source: 'Check the source',
+    feedbackQ: 'Found a wrong number or have an idea?', feedbackBtn: 'Email feedback',
+    disclaimer: 'Amounts are scaled from published recipes (JADAM, NITI Aayog, TNAU and state guides). Recipes vary between sources, so measure carefully, test on a few plants before treating a whole crop, and check the official steps before you mix. This is an unofficial tool and is not affiliated with JADAM or any government body. It is a calculator, not professional safety advice.',
+    recipeFoot: 'Scaled from published recipes. Check the official steps before mixing. Wear gloves and eye protection.',
+    units: { kg: 'kg', g: 'g', lb: 'lb', oz: 'oz', L: 'L', mL: 'mL', gal: 'gal', floz: 'fl oz' }
+  },
+  hi: {
+    title: 'जैविक खेती कैलकुलेटर', tagline: 'किसी भी मात्रा के लिए सही नाप', offline: 'बिना इंटरनेट भी चलेगा',
+    groups: { jadam: 'JADAM विधियाँ', india: 'भारतीय पारंपरिक' },
+    indiaNote: 'नीति आयोग और राज्य कृषि विश्वविद्यालयों द्वारा दर्ज प्राकृतिक खेती की विधियाँ। इनमें देसी गाय का गोबर और गोमूत्र इस्तेमाल होता है।',
+    hot: 'पानी 27 °C (80 °F) से ज़्यादा गरम है', hotNote: 'गरम पानी के हिसाब से बदला गया',
+    copy: 'कॉपी', share: 'शेयर', copied: 'विधि कॉपी हो गई', copyFail: 'कॉपी नहीं हो सकी', enterFirst: 'पहले मात्रा डालें',
+    copyAria: 'विधि कॉपी करें', shareAria: 'विधि शेयर करें',
+    yourRecipe: 'आपकी विधि', enterAmount: 'कितना बनाना है, यह डालें।',
+    need: (sz, name) => `${sz} ${name} के लिए सामग्री`,
+    covers: n => `इससे लगभग ${n} एकड़ में डाल सकते हैं।`,
+    sprayTitle: 'छिड़काव के लिए घोल', tankHelp: 'आपके स्प्रेयर या टंकी की क्षमता।', tankAria: u => `स्प्रेयर की क्षमता (${u})`,
+    dilution: 'अनुपात', dilAria: 'पतला करने का अनुपात', stronger: 'गाढ़ा', weaker: 'हल्का', enterTank: 'स्प्रेयर की क्षमता डालें।',
+    conc: name => `${name} (गाढ़ा घोल)`, fillTo: tank => `फिर पानी डालकर ${tank} तक भरें`,
+    batchLine: (a, b, n) => `${a} के आपके बैच से ${n}× पर लगभग ${b} छिड़कने लायक घोल बनता है।`,
+    method: 'बनाने की विधि', safety: 'सुरक्षा', source: 'स्रोत देखें',
+    feedbackQ: 'कोई गलत नाप दिखी या कोई सुझाव है?', feedbackBtn: 'ईमेल से सुझाव भेजें',
+    disclaimer: 'मात्राएँ प्रकाशित विधियों (JADAM, नीति आयोग, TNAU और राज्यों की गाइड) से बढ़ाई-घटाई गई हैं। अलग-अलग स्रोतों में विधियाँ अलग हो सकती हैं, इसलिए ध्यान से नापें, पूरी फसल पर डालने से पहले कुछ पौधों पर आज़माएँ, और मिलाने से पहले आधिकारिक चरण देख लें। यह एक अनौपचारिक टूल है और JADAM या किसी सरकारी संस्था से जुड़ा नहीं है। यह सिर्फ़ एक कैलकुलेटर है, पेशेवर सुरक्षा सलाह नहीं।',
+    recipeFoot: 'प्रकाशित विधियों से बढ़ाई-घटाई गई मात्राएँ। मिलाने से पहले आधिकारिक चरण देखें। दस्ताने और आँखों की सुरक्षा पहनें।',
+    units: { kg: 'किलो', g: 'ग्राम', lb: 'पाउंड', oz: 'औंस', L: 'लीटर', mL: 'मिली', gal: 'गैलन', floz: 'तरल औंस' }
+  }
+};
+
+const HI_S_CAUSTIC = name => [
+  `${name} से रासायनिक जलन होती है। पानी में मिलाने पर यह बहुत गरम हो जाता है।`,
+  'चश्मा, रबर के दस्ताने, जूते, पूरी बाँह की जैकेट और मास्क पहनें। खुले में काम करें।',
+  'गरमी सहने वाले प्लास्टिक के बर्तन इस्तेमाल करें। एल्युमिनियम कभी नहीं।',
+  'बच्चों और जानवरों को दूर रखें। हर बर्तन पर नाम लिखें।'
+];
+const HI_S_FERMENT = [
+  'संभालने के बाद दस्ताने पहनें और हाथ धोएँ।',
+  'सड़ते हुए घोल की गंध तेज़ हो सकती है। इसे घर से दूर रखें।',
+  'हर बर्तन पर नाम लिखें और बच्चों की पहुँच से दूर रखें।'
+];
+const HI_S_COW = [
+  'गोबर और गोमूत्र छूने के बाद दस्ताने पहनें और हाथ अच्छी तरह धोएँ।',
+  'सब्ज़ी और फल खाने से पहले अच्छी तरह धोएँ। कटाई के पास फल-सब्ज़ी पर छिड़काव न करें।',
+  'ड्रम को जाली से ढकें ताकि मक्खियाँ अंडे न दें। हर बर्तन पर नाम लिखें और बच्चों से दूर रखें।'
+];
+const HI_S_TOXIC = [
+  'धतूरा, तंबाकू और मिर्च जैसी चीज़ें ज़हरीली या जलन करने वाली हैं। दस्ताने, मास्क और आँखों की सुरक्षा पहनें।',
+  'उबालना और मिलाना खुले में करें। बाद में इन बर्तनों को रसोई में इस्तेमाल न करें।',
+  'बच्चों और जानवरों से दूर रखें। हर बर्तन पर साफ़ नाम लिखें।',
+  'उपज को अच्छी तरह धोएँ। कटाई के पास उपज पर छिड़काव न करें।'
+];
+
+// Hindi text for each product. `items` lines up with the English items by position.
+const HI = {
+  js: {
+    name: 'JADAM सल्फर', tag: 'सल्फर', role: 'फफूँदनाशक और कीटनाशक',
+    sizeLabel: 'आप कितना JS बनाना चाहते हैं?',
+    items: [
+      { g: 'सूखी सामग्री', n: 'गंधक (सल्फर)' }, { g: 'सूखी सामग्री', n: 'लाल मिट्टी का पाउडर' },
+      { g: 'सूखी सामग्री', n: 'फाइलाइट पाउडर' }, { g: 'सूखी सामग्री', n: 'समुद्री नमक' },
+      { g: 'सूखी सामग्री', n: 'कॉस्टिक सोडा (NaOH)' },
+      { g: 'पानी', n: 'शुरू का पानी', note: 'ठीक नापें' },
+      { g: 'पानी', n: 'ऊपर से डालने का पानी', note: 'गंधक घुलने के बाद डालें' }
+    ],
+    dil: { note: 'JADAM लगभग 100× से 1000× सुझाता है।' },
+    tipsTitle: 'ज़रूरी बातें',
+    tips: [
+      'सामग्री उसी क्रम में डालें जो JADAM के आधिकारिक चरणों में दिया है (नीचे लिंक)।',
+      'अंगूर, पर्सिमन, अखरोट, कद्दू और ग्रीनहाउस की फसलें संवेदनशील हैं। पहले कुछ पत्तियों पर आज़माएँ।',
+      'गरमी सहने वाला प्लास्टिक (PE) का बर्तन लें। एल्युमिनियम कभी नहीं।',
+      'मिश्रण लगभग 80 °C के पार जाने पर गंधक पिघलता है। तली में गुठलियाँ न रहें, तब तक चलाते रहें।',
+      'ऊपर का पानी डालने के बाद एक-दो दिन टिकने दें, फिर तलछट छान लें।',
+      'इसे −5 °C (23 °F) से ऊपर के तापमान पर रखें।'
+    ],
+    safety: HI_S_CAUSTIC('कॉस्टिक सोडा'),
+    basisNote: 'JADAM की 110 लीटर वाली विधि से बढ़ाया-घटाया गया है। ऊपर का पानी 10 लीटर वाली विधि से लिया है।'
+  },
+  jwa: {
+    name: 'JADAM वेटिंग एजेंट', tag: 'चिपकाने वाला', role: 'प्राकृतिक साबुन जो छिड़काव को पत्तियों पर चिपकाता है',
+    sizeLabel: 'आप कितना JWA बनाना चाहते हैं?',
+    items: [
+      { g: 'चरण 1: घोलें', n: 'पोटैशियम हाइड्रॉक्साइड (KOH, 90%)', note: 'इसे कॉस्टिक पोटाश भी कहते हैं' },
+      { g: 'चरण 1: घोलें', n: 'मुलायम पानी', note: 'ठीक नापें। बारिश का या डिस्टिल्ड पानी।' },
+      { g: 'चरण 2: मिलाएँ', n: 'कैनोला तेल' },
+      { g: 'बाद में', n: 'पानी', note: '10 लीटर वाली विधि से। कब डालना है, यह आधिकारिक चरणों में देखें।' }
+    ],
+    dil: { note: 'प्रकाशित सीमा लगभग 30× से 100× है।' },
+    steps: [
+      'KOH को मुलायम पानी में बंद, गरमी सहने वाले बर्तन में घोलें। यह बहुत गरम हो जाता है।',
+      'कैनोला तेल डालें। इलेक्ट्रिक ड्रिल से लगभग 10 मिनट तक मिलाएँ, जब तक पतली मलाई जैसा न दिखे। हाथ से मिलाने पर नहीं बनता।',
+      'ढक्कन बंद करके 3 दिन रखें। यह मक्खन की तरह जम जाना चाहिए।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: [
+      'सिर्फ़ मुलायम पानी इस्तेमाल करें। कठोर नल का पानी इसे खराब कर देता है।',
+      'तेज़ धूप में छिड़काव न करें। स्वीट पी, नैस्टर्शियम और नाज़ुक फर्न पर न डालें।'
+    ],
+    safety: HI_S_CAUSTIC('पोटैशियम हाइड्रॉक्साइड'),
+    basisNote: 'JADAM की 110 लीटर विधि (3.2 किलो KOH, 2.5 लीटर पानी, 18 लीटर कैनोला तेल) से बढ़ाया-घटाया गया है।'
+  },
+  jms: {
+    name: 'JADAM माइक्रोबियल सॉल्यूशन', tag: 'सूक्ष्मजीव', role: 'पत्तों की सड़ी मिट्टी से जीवित मिट्टी के सूक्ष्मजीव',
+    sizeLabel: 'आप कितने पानी में कल्चर बनाना चाहते हैं?',
+    items: [
+      { g: 'सामग्री', n: 'पत्तों की सड़ी मिट्टी (लीफ मोल्ड)', note: 'पास के जंगल की ज़मीन से' },
+      { g: 'सामग्री', n: 'उबला आलू' }, { g: 'सामग्री', n: 'समुद्री नमक' },
+      { g: 'सामग्री', n: 'बिना क्लोरीन का पानी', note: 'नल का पानी 24 घंटे रखा रहने दें' }
+    ],
+    dil: { note: 'इस्तेमाल से पहले आमतौर पर लगभग 10× पतला करते हैं।' },
+    steps: [
+      'आलू उबालकर मसल लें। उसे और लीफ मोल्ड को जाली की थैली में रखें।',
+      'नमक को पानी में घोलें। थैली को उसमें लटकाकर तब तक मसलें जब तक पानी मटमैला-भूरा न हो जाए।',
+      'हल्का ढककर 18 से 25 °C के आसपास रखें।',
+      '1 से 3 दिन में ऊपर झाग की परत बन जाती है। एक-दो दिन में इस्तेमाल कर लें।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: ['JMS जमा करके नहीं रखा जाता। हर बार ताज़ा बनाएँ।'],
+    safety: HI_S_FERMENT,
+    basisNote: 'आमतौर पर बताई जाने वाली मूल विधि पर आधारित है (500 लीटर पानी, 0.5 किलो लीफ मोल्ड, 1 किलो आलू, 0.5 किलो नमक)। छोटे बैच की विधियाँ अलग-अलग मिलती हैं, इसलिए इसे शुरुआती अंदाज़ा मानें।'
+  },
+  jlf: {
+    name: 'JADAM लिक्विड फर्टिलाइज़र', tag: 'तरल खाद', role: 'सड़ाई हुई पौधों की तरल खाद',
+    sizeLabel: 'आपका ड्रम कितना बड़ा है?',
+    items: [
+      { g: 'ड्रम भरें', n: 'कटी हुई हरी सामग्री (पौधों के हिस्से)', note: 'ढीली भरें। ड्रम का लगभग एक तिहाई।' },
+      { g: 'ड्रम भरें', n: 'बिना क्लोरीन का पानी', note: 'बाकी हिस्सा भर दें' }
+    ],
+    dil: { note: 'JADAM लगभग 100× इस्तेमाल करता है। पौध के लिए हल्का (200× से 500×)।' },
+    steps: [
+      'हरी सामग्री को छोटा-छोटा काट लें।',
+      'ड्रम का लगभग एक तिहाई हिस्सा उससे ढीला भर दें।',
+      'बाकी हिस्सा बिना क्लोरीन के पानी से भरें। हल्का ढक दें।',
+      'इसे हफ्तों से महीनों तक रखें। जब बदबू के बजाय मिट्टी जैसी खुशबू आए, तब तैयार है।',
+      'इस्तेमाल से पहले पतला करें।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: ['सबसे अच्छी सामग्री: उसी फसल का बचा हुआ हिस्सा, फिर जंगली घास और खरपतवार।'],
+    safety: HI_S_FERMENT,
+    basisNote: 'JLF एक मोटा नियम है, सटीक विधि नहीं। एक तिहाई वाला नियम JADAM उत्पादकों के आम अभ्यास से है।'
+  },
+  jeevamrit: {
+    name: 'जीवामृत', label: 'जीवामृत', tag: 'मिट्टी बूस्टर', role: 'गोबर और गोमूत्र का घोल जो मिट्टी के सूक्ष्मजीवों को खुराक देता है',
+    sizeLabel: 'आप कितना जीवामृत बनाना चाहते हैं?',
+    items: [
+      { g: 'ड्रम में', n: 'ताज़ा देसी गाय का गोबर' },
+      { g: 'ड्रम में', n: 'देसी गाय का गोमूत्र', note: 'स्रोत 5 से 10 लीटर बताते हैं। यहाँ बीच का माप लिया है।' },
+      { g: 'ड्रम में', n: 'गुड़' }, { g: 'ड्रम में', n: 'बेसन (दाल का आटा)' },
+      { g: 'ड्रम में', n: 'चूना', note: 'कुछ विधियों में नहीं डालते' },
+      { g: 'ड्रम में', n: 'खेत की मिट्टी', note: 'पुराने पेड़ के नीचे या खेत की मेड़ से। रसायन-मुक्त।' },
+      { g: 'ड्रम में', n: 'पानी' }
+    ],
+    coverage: { text: 'आमतौर पर लगभग 200 लीटर प्रति एकड़, हर 15 दिन पर सिंचाई के साथ डाला जाता है।' },
+    dil: { note: 'पत्तों पर छिड़काव के लिए गुजरात की पद्धति में लगभग 7.5 लीटर जीवामृत 120 लीटर पानी में लेते हैं। मिट्टी में इसे बिना पतला किए डालते हैं।' },
+    steps: [
+      'सब कुछ ड्रम में पानी के साथ मिलाएँ।',
+      'छाया में 48 घंटे रखें। हर सुबह और शाम लकड़ी की डंडी से चलाएँ।',
+      'हर पखवाड़े (15 दिन) पर डालें, फसल पर छिड़कें या सिंचाई के पानी में मिलाएँ।',
+      'लगभग 15 दिन के अंदर इस्तेमाल कर लें।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: ['देसी गाय का गोबर और गोमूत्र इस्तेमाल करें।'],
+    safety: HI_S_COW,
+    basisNote: 'नीति आयोग के प्राकृतिक खेती पोर्टल (APCNF) से। दूसरी विधियों में मात्राएँ थोड़ी अलग हैं।'
+  },
+  beejamrit: {
+    name: 'बीजामृत', label: 'बीजामृत', tag: 'बीज उपचार', role: 'बीज और नई जड़ों को बचाने वाला लेप',
+    sizeLabel: 'आप कितने बीज का उपचार करना चाहते हैं?',
+    titleFn: sz => `${sz} बीज के उपचार के लिए सामग्री`,
+    items: [
+      { g: 'सामग्री', n: 'देसी गाय का गोबर', note: 'कपड़े की पोटली में बाँधा हुआ' },
+      { g: 'सामग्री', n: 'देसी गाय का गोमूत्र' },
+      { g: 'सामग्री', n: 'चूना', note: 'रात भर थोड़े पानी में घोला हुआ' },
+      { g: 'सामग्री', n: 'खेत की मेड़ की मिट्टी' },
+      { g: 'सामग्री', n: 'पानी' }
+    ],
+    use: {
+      title: 'कैसे इस्तेमाल करें',
+      list: [
+        'बीजों पर हाथ से बीजामृत लगाएँ, छाया में अच्छी तरह सुखाएँ, फिर बोएँ।',
+        'पतले छिलके वाली दलहनी फसलों के बीजों को बस जल्दी से डुबोकर सुखा लें।',
+        'धान की पौध की जड़ों को रोपाई से पहले 30 मिनट डुबोकर रखें।'
+      ]
+    },
+    steps: [
+      'गोबर को कपड़े में बाँधकर पानी में 12 घंटे तक लटकाएँ।',
+      'चूने को थोड़े पानी में घोलकर रात भर रख दें।',
+      'अगली सुबह गोबर की पोटली को पानी में 3 बार निचोड़ें।',
+      'मिट्टी डालकर चलाएँ। फिर गोमूत्र और चूने का पानी डालकर फिर से चलाएँ।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: ['इसे ताज़ा बनाकर उसी दिन इस्तेमाल करें।'],
+    safety: HI_S_COW,
+    basisNote: 'नीति आयोग के प्राकृतिक खेती पोर्टल से। मात्राएँ 100 किलो बीज के लिए हैं।'
+  },
+  ghana: {
+    name: 'घनजीवामृत', label: 'घनजीवामृत', tag: 'सूखा बूस्टर', role: 'जीवामृत का सूखा, ठोस रूप, जो मिट्टी में मिलाया जाता है',
+    sizeLabel: 'आपके पास कितना सूखा गोबर है?',
+    titleFn: sz => `${sz} सूखे गोबर के लिए सामग्री`,
+    items: [
+      { g: 'सामग्री', n: 'अच्छी तरह सूखा देसी गाय का गोबर' },
+      { g: 'सामग्री', n: 'बेसन (दाल का आटा)' },
+      { g: 'सामग्री', n: 'गुड़', note: 'पानी में घोला हुआ' },
+      { g: 'सामग्री', n: 'देसी गाय का गोमूत्र', text: 'थोड़ा', note: 'गोबर को बस नम करने भर' },
+      { g: 'सामग्री', n: 'पौधों की जड़ों के पास की मिट्टी', text: 'एक मुट्ठी' }
+    ],
+    coverage: { text: 'आमतौर पर बुवाई के समय लगभग 100 किलो प्रति एकड़। कुछ राज्यों की पद्धति में आख़िरी जुताई से पहले 200 किलो लेते हैं।' },
+    use: {
+      title: 'कैसे इस्तेमाल करें',
+      list: [
+        'बुवाई के समय खेत में बिखेरें, या पौधों के आसपास ऊपर से डालें।',
+        'इस्तेमाल तक इसे सूखा रखें।'
+      ]
+    },
+    steps: [
+      'सूखे गोबर को ज़मीन पर पतली परत में फैलाएँ।',
+      'थोड़ा गोमूत्र और बेसन छिड़कें।',
+      'गुड़ को पानी में घोलकर ऊपर छिड़कें। एक मुट्ठी मिट्टी डालें।',
+      'अच्छी तरह मिलाकर छोटे-छोटे लड्डू बना लें। छाया में सुखाएँ।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: ['सूखा घनजीवामृत कुछ महीने चल जाता है, इसलिए रखना और ले जाना आसान है।'],
+    safety: HI_S_COW,
+    basisNote: 'गोबर, बेसन और गुड़ की मात्रा एक प्रकाशित गाइड से है। गोमूत्र की कोई तय मात्रा नहीं है, इसलिए गोबर को नम करने भर डालें।'
+  },
+  panchagavya: {
+    name: 'पंचगव्य', label: 'पंचगव्य', tag: 'पोषक टॉनिक', role: 'गाय के पाँच उत्पादों का सड़ाया हुआ मिश्रण, जिसे पत्तियों पर छिड़का जाता है',
+    sizeLabel: 'आप कितना पंचगव्य बनाना चाहते हैं? (लगभग)',
+    items: [
+      { g: 'चरण 1: 3 दिन', n: 'ताज़ा देसी गाय का गोबर' },
+      { g: 'चरण 1: 3 दिन', n: 'देसी गाय का घी' },
+      { g: 'चरण 2: 15 दिन', n: 'देसी गाय का गोमूत्र' },
+      { g: 'चरण 2: 15 दिन', n: 'पानी' },
+      { g: 'चरण 3: लगभग 30 दिन', n: 'देसी गाय का दूध' },
+      { g: 'चरण 3: लगभग 30 दिन', n: 'देसी गाय का दही' },
+      { g: 'चरण 3: लगभग 30 दिन', n: 'कच्चे नारियल का पानी' },
+      { g: 'चरण 3: लगभग 30 दिन', n: 'गुड़' },
+      { g: 'चरण 3: लगभग 30 दिन', n: 'पके केले', unit: 'केले', note: 'अच्छे पके और मसले हुए' }
+    ],
+    dil: { note: 'आमतौर पर 100 लीटर पानी में 3 लीटर पंचगव्य (3%) का छिड़काव करते हैं। पत्तेदार सब्ज़ियों पर हल्का, लगभग 2%, रखें।' },
+    steps: [
+      'गोबर और घी को अच्छी तरह मिलाएँ। 3 दिन तक सुबह-शाम चलाएँ।',
+      'गोमूत्र और पानी डालें। 15 दिन तक सुबह-शाम चलाएँ।',
+      'दूध, दही, नारियल पानी, गुड़ और मसले हुए केले डालें।',
+      'लगभग 30 दिन तक दिन में दो बार चलाएँ, फिर कपड़े से छान लें।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: [
+      'इसे जाली से ढककर रखें ताकि मक्खियाँ अंडे न दें।',
+      'छिड़काव से पहले अच्छी तरह छान लें ताकि स्प्रेयर न रुके।'
+    ],
+    safety: HI_S_COW,
+    basisNote: 'TNAU की विधि के अनुसार। तैयार मात्रा लगभग 40 लीटर है और सिर्फ़ अंदाज़ा है। दूसरी गाइड में मात्राएँ अलग हैं, जैसे 3 किलो गोबर।'
+  },
+  neemastra: {
+    name: 'नीमास्त्र', label: 'नीमास्त्र', tag: 'रस चूसक कीट', role: 'रस चूसने वाले कीटों, सफेद मक्खी और छोटी इल्लियों के लिए नीम आधारित छिड़काव',
+    sizeLabel: 'आप कितना नीमास्त्र बनाना चाहते हैं?',
+    items: [
+      { g: 'ड्रम में', n: 'पानी' },
+      { g: 'ड्रम में', n: 'देसी गाय का गोमूत्र' },
+      { g: 'ड्रम में', n: 'देसी गाय का गोबर' },
+      { g: 'ड्रम में', n: 'नीम की पत्तियों की चटनी', note: 'या नीम की निबौली का गूदा' }
+    ],
+    dil: { note: 'आमतौर पर 3.5% से 5% रखते हैं। 100 लीटर पानी में 5 लीटर यानी 20×।' },
+    steps: [
+      'पानी में गोमूत्र, गोबर और नीम की चटनी डालें।',
+      'लंबी डंडी से घड़ी की दिशा में चलाएँ। बोरी से ढककर छाया में रखें, धूप और बारिश से दूर।',
+      'हर सुबह और शाम चलाएँ। 48 घंटे में तैयार है।',
+      'इस्तेमाल से पहले मलमल के कपड़े से छान लें।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: [
+      'शाम को छिड़काव करें, जब मित्र कीट सक्रिय नहीं होते।',
+      'ताज़ा सबसे अच्छा है। गुजरात के दस्तावेज़ के अनुसार यह 6 महीने तक चल जाता है।'
+    ],
+    safety: HI_S_COW,
+    basisNote: 'गुजरात के कॉन्सेप्ट पेपर की 200 लीटर वाली विधि पर आधारित। पालेकर की मूल विधि में 100 लीटर पानी, 5 किलो गोबर, 5 लीटर गोमूत्र और 5 किलो नीम पत्ती है।'
+  },
+  brahmastra: {
+    name: 'ब्रह्मास्त्र', label: 'ब्रह्मास्त्र', tag: 'इल्लियाँ', role: 'बड़ी इल्लियों और तना छेदक कीटों के लिए उबली पत्तियों और गोमूत्र का छिड़काव',
+    sizeLabel: 'आप कितना ब्रह्मास्त्र बनाना चाहते हैं?',
+    items: [
+      { g: 'गोमूत्र', n: 'देसी गाय का गोमूत्र' },
+      { g: 'पत्तों की चटनी', n: 'नीम की पत्तियाँ' },
+      { g: 'पत्तों की चटनी', n: 'करंज की पत्तियाँ' },
+      { g: 'पत्तों की चटनी', n: 'सीताफल की पत्तियाँ' },
+      { g: 'पत्तों की चटनी', n: 'अरंडी की पत्तियाँ' },
+      { g: 'पत्तों की चटनी', n: 'धतूरे की पत्तियाँ', note: 'ज़हरीला। दस्ताने पहनें।' }
+    ],
+    dil: { note: 'छिड़काव के लिए 100 लीटर पानी में 2 से 3 लीटर। सूत्रकृमि (निमेटोड) के लिए मिट्टी में डालने पर 100 लीटर पानी में 8 लीटर (12×)।' },
+    steps: [
+      'हर तरह की पत्तियों को पीसकर बारीक चटनी बना लें।',
+      'गोमूत्र को बर्तन में रखें और सारी चटनियाँ मिला दें।',
+      'धीमी आँच पर एक-दो उबाल आने तक पकाएँ। घड़ी की दिशा में चलाएँ और ढककर रखें।',
+      'दूसरे उबाल के बाद आँच बंद करें और 48 घंटे ठंडा होने दें।',
+      'मलमल के कपड़े से छानें। छाया में किसी बर्तन में रखें।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: [
+      'कुछ विधियों में पपीता, अनार और अमरूद जैसी दूसरी पत्तियाँ भी लेते हैं।',
+      'धूप से दूर रखें। गाइड के अनुसार यह 6 महीने तक चलता है।'
+    ],
+    safety: HI_S_TOXIC,
+    basisNote: 'नीति आयोग पोर्टल से। उसकी सामग्री-सूची और चरणों में अरंडी और धतूरे पर थोड़ा अंतर है, इसलिए यहाँ पाँचों पत्तियाँ शामिल हैं।'
+  },
+  agniastra: {
+    name: 'अग्निअस्त्र', label: 'अग्निअस्त्र', tag: 'छेदक कीट', role: 'नीम, मिर्च और लहसुन से बना तीखा छिड़काव, छेदक कीटों और इल्लियों के लिए',
+    sizeLabel: 'आप कितना अग्निअस्त्र बनाना चाहते हैं?',
+    items: [
+      { g: 'सामग्री', n: 'देसी गाय का गोमूत्र' },
+      { g: 'सामग्री', n: 'नीम की पत्तियों की चटनी' },
+      { g: 'सामग्री', n: 'तंबाकू पाउडर', note: 'ज़हरीला। दस्ताने और मास्क पहनें।' },
+      { g: 'सामग्री', n: 'हरी मिर्च का पेस्ट' },
+      { g: 'सामग्री', n: 'लहसुन का पेस्ट' },
+      { g: 'सामग्री', n: 'हल्दी पाउडर' }
+    ],
+    dil: { note: '200 लीटर पानी में 6 से 8 लीटर (25× से 33×)। ज़्यादा हमले में गाढ़ा घोल लें।' },
+    steps: [
+      'सब कुछ गोमूत्र में मिलाएँ और घड़ी की दिशा में चलाएँ।',
+      'ढककर झाग आने तक उबालें।',
+      'आँच से उतारकर छाया में 48 घंटे रखें। दिन में दो बार चलाएँ।',
+      'मलमल के कपड़े से छान लें। यह लगभग 3 महीने चलता है।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: ['तने और फलों के छेदक कीटों और इल्लियों के विरुद्ध इस्तेमाल करें।'],
+    safety: HI_S_TOXIC,
+    basisNote: 'ठोस सामग्री की मात्रा नीति आयोग पोर्टल से है। पोर्टल के पन्ने पर 200 लीटर गोमूत्र छपा है, पर उसे उद्धृत करने वाले शोध-पत्रों में 20 लीटर है, वही यहाँ लिया है।'
+  },
+  dashaparni: {
+    name: 'दशपर्णी अर्क', label: 'दशपर्णी', tag: 'सभी कीट', role: 'दस पत्तियों का सड़ाया हुआ अर्क, कई कीटों और रोगों के लिए',
+    sizeLabel: 'आप कितना दशपर्णी अर्क बनाना चाहते हैं?',
+    items: [
+      { g: 'पहला दिन: आधार', n: 'पानी' },
+      { g: 'पहला दिन: आधार', n: 'देसी गाय का गोमूत्र' },
+      { g: 'पहला दिन: आधार', n: 'देसी गाय का गोबर' },
+      { g: 'पहला दिन: मसाले', n: 'हल्दी पाउडर' },
+      { g: 'पहला दिन: मसाले', n: 'अदरक का पेस्ट' },
+      { g: 'पहला दिन: मसाले', n: 'हींग' },
+      { g: 'दूसरा दिन', n: 'तंबाकू पाउडर', note: 'ज़हरीला। दस्ताने और मास्क पहनें।' },
+      { g: 'दूसरा दिन', n: 'हरी मिर्च का पेस्ट' },
+      { g: 'दूसरा दिन', n: 'लहसुन का पेस्ट' },
+      { g: 'तीसरा दिन: पत्तियाँ', n: 'पत्तों की चटनी, 10 किस्म', note: 'हर किस्म की 2 किलो, जैसे नीम, करंज, सीताफल, अरंडी और पपीता' }
+    ],
+    dil: { note: '200 लीटर पानी में 6 से 8 लीटर (3% से 4%)।' },
+    steps: [
+      'पानी में गोमूत्र और गोबर डालें। ढककर 2 घंटे रखें।',
+      'हल्दी, अदरक और हींग डालें। घड़ी की दिशा में चलाएँ, ढककर रात भर रखें।',
+      'अगली सुबह तंबाकू, मिर्च और लहसुन डालें। चलाएँ, ढकें और छाया में 24 घंटे रखें।',
+      'दस तरह की पत्तियों की चटनी डालें। चलाएँ और बोरी से ढक दें।',
+      '30 से 40 दिन तक दिन में दो बार चलाते हुए सड़ने दें। फिर मलमल के कपड़े से छान लें।'
+    ],
+    tipsTitle: 'ज़रूरी बातें',
+    tips: [
+      'पत्तियाँ मिल जाएँ तो यह नीमास्त्र, ब्रह्मास्त्र और अग्निअस्त्र की जगह ले सकता है।',
+      'कीट भगाने वाली कोई भी दस तरह की पत्तियाँ ली जा सकती हैं। ऐसी पत्तियाँ न लें जिन्हें आपके पशु खाते हैं।'
+    ],
+    safety: HI_S_TOXIC,
+    basisNote: 'आंध्र प्रदेश की प्राकृतिक खेती पद्धति के अनुसार। हल्दी, अदरक और मिर्च की मात्रा अलग-अलग गाइड में अलग है, इसलिए अपने राज्य के कार्यक्रम से जाँच लें।'
+  }
+};
+
+const HI_TEXT = { hi: HI };
+// Product as shown in the current language: English data with translated text laid over it.
+function V(id) {
+  const P = PRODUCTS[id];
+  const h = (HI_TEXT[state.lang] || {})[id];
+  if (!h) return P;
+  const v = { ...P, ...h };
+  v.items = P.items.map((it, i) => ({ ...it, ...((h.items || [])[i] || {}) }));
+  if (P.dil) v.dil = { ...P.dil, ...(h.dil || {}) };
+  if (P.coverage) v.coverage = { ...P.coverage, ...(h.coverage || {}) };
+  if (P.use) v.use = { ...P.use, ...(h.use || {}) };
+  return v;
+}
+const tr = (key, ...a) => {
+  const v = (UI[state.lang] && UI[state.lang][key] !== undefined) ? UI[state.lang][key] : UI.en[key];
+  return typeof v === 'function' ? v(...a) : v;
+};
+const un = k => (UI[state.lang] && UI[state.lang].units ? UI[state.lang].units[k] : UI.en.units[k]);
+
+/* ------------------------------------------------------------------
+   Icons (24×24 line icons)
+   ------------------------------------------------------------------ */
+const ICON = {
+  js: '<path d="M9 3h6M10 3v6.2L4.6 18.4A2 2 0 0 0 6.3 21.4h11.4a2 2 0 0 0 1.7-3L14 9.2V3"/><path d="M7.6 15.2h8.8"/>',
+  jwa: '<path d="M12 3.2s6 6 6 10.3a6 6 0 0 1-12 0C6 9.2 12 3.2 12 3.2z"/><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.4"/>',
+  jms: '<circle cx="8" cy="9" r="3.2"/><circle cx="16.5" cy="7.5" r="2"/><circle cx="15.5" cy="16" r="3.6"/><circle cx="6.5" cy="17.5" r="1.6"/>',
+  jlf: '<path d="M5 19C5 10.5 10.5 5 19.5 4.5 19 13.5 13.5 19 5 19z"/><path d="M5 19c2.5-4.5 5.5-7.5 9.5-9.5"/>',
+  jeevamrit: '<path d="M8 4h8"/><path d="M9 4c0 2-3.5 3-3.5 7.5A6.5 6.5 0 0 0 12 18a6.5 6.5 0 0 0 6.5-6.5C18.5 7 15 6 15 4"/><path d="M8.5 21h7"/>',
+  beejamrit: '<path d="M12 3c4 2.5 6 6 6 9.5a6 6 0 0 1-12 0C6 9 8 5.500 12 3z"/><path d="M12 8.5v10"/><path d="M12 12.500c-2 0-3-1-3.500-2M12 15.500c2 0 3-1 3.500-2"/>',
+  ghana: '<circle cx="8" cy="15.5" r="3.7"/><circle cx="16" cy="15.5" r="3.7"/><circle cx="12" cy="8.500" r="3.700"/>',
+  panchagavya: '<path d="M4 5.500c.8 3 2.800 4.300 5 4.500M20 5.500c-.8 3-2.800 4.300-5 4.500"/><path d="M9 10h6l1.200 8a2 2 0 0 1-2 2.300h-4.400a2 2 0 0 1-2-2.300L9 10z"/><path d="M10.200 15.500h.01M13.800 15.500h.01"/>',
+  neemastra: '<path d="M12 21V8"/><path d="M12 8c-3 0-5-1.500-5-4 3 0 5 1.300 5 4z"/><path d="M12 8c3 0 5-1.500 5-4-3 0-5 1.300-5 4z"/><path d="M12 14c-3 0-5-1.500-5-4M12 14c3 0 5-1.500 5-4"/><path d="M12 19c-2.500 0-4.500-1.200-5-3M12 19c2.500 0 4.500-1.200 5-3"/>',
+  brahmastra: '<path d="M12 8a4 4 0 0 1 4 4v3a4 4 0 0 1-8 0v-3a4 4 0 0 1 4-4z"/><path d="M9.500 6 8 4M14.500 6 16 4M8 12H4M16 12h4M8.500 16.500 5.500 19M15.500 16.500l3 2.500"/>',
+  agniastra: '<path d="M12 3c.8 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.200 2-4 0 2 .8 3 2 3 0-3-1.500-5 1-9z"/>',
+  dashaparni: '<path d="M4 20c0-7 4-11 11-12 0 7-4 11-11 12z"/><path d="M12 21c0-5 3-8 8-9 0 5-3 8-8 9z"/>',
+  warn: '<path d="M12 3.5 22 20.5H2L12 3.5z"/><path d="M12 10v4.5M12 17.5h.01"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="12" rx="2"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/>',
+  share: '<path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 12v6.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V12"/>'
+};
+const icon = (n, s = 24, sw = 1.8) =>
+  `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
+
+/* ------------------------------------------------------------------
+   Helpers
+   ------------------------------------------------------------------ */
+const $ = s => document.querySelector(s);
+const OZ = 35.274;   // ounces per kg
+const LB = 2.20462;  // pounds per kg
+// Gallon systems: gallons and fluid ounces per liter
+const GALSYS = { us: { gal: 0.264172, floz: 33.814 }, imp: { gal: 0.219969, floz: 35.195 } };
+
+const COMMA_LANGS = ['es', 'pt', 'fr', 'de', 'nl', 'id', 'vi', 'ru'];
+function trim(n, d) {
+  const s = String(parseFloat(n.toFixed(d)));
+  return COMMA_LANGS.includes(state.lang) ? s.replace('.', ',') : s;
+}
+function massMetric(kg) {
+  if (kg >= 1) return trim(kg, 2) + ' ' + un('kg');
+  const g = kg * 1000;
+  return trim(g, g >= 10 ? 0 : 1) + ' ' + un('g');
+}
+function massUS(kg) {
+  const oz = kg * OZ;
+  return oz >= 16 ? trim(oz / 16, 2) + ' ' + un('lb') : trim(oz, 1) + ' ' + un('oz');
+}
+function volMetric(L) {
+  if (L >= 1) return trim(L, 2) + ' ' + un('L');
+  const ml = L * 1000;
+  return trim(ml, ml >= 10 ? 0 : 1) + ' ' + un('mL');
+}
+function volGal(L, sys) {
+  const g = GALSYS[sys];
+  const gal = L * g.gal;
+  return gal >= 1 ? trim(gal, 2) + ' ' + un('gal') : trim(L * g.floz, 1) + ' ' + un('floz');
+}
+// returns [primary, secondary]. Metric shows only itself. Gallon systems also show metric.
+function fmt(type, v, sys) {
+  const metric = type === 'm' ? massMetric(v) : volMetric(v);
+  if (sys === 'metric') return [metric, ''];
+  return [type === 'm' ? massUS(v) : volGal(v, sys), metric];
+}
+// amount for one recipe item: [primary, secondary]
+function amountFor(it, scale, sys, hot) {
+  if (it.t === 'x') return [it.text, ''];
+  const per = (hot && it.hotPer) ? it.hotPer : it.per;
+  if (it.t === 'n') return [Math.max(1, Math.round(per * scale)) + ' ' + (it.unit || ''), ''];
+  return fmt(it.t, per * scale, sys);
+}
+const volFactor = () => state.sys === 'metric' ? 1 : GALSYS[state.sys].gal;
+const massFactor = () => state.sys === 'metric' ? 1 : LB;
+const sizeType = P => P.sizeType || 'v';
+const sizeFactor = P => sizeType(P) === 'm' ? massFactor() : volFactor();
+const toDisp = (x, f) => parseFloat((x * f).toFixed(2));
+
+/* ------------------------------------------------------------------
+   State
+   ------------------------------------------------------------------ */
+// Metric (L, kg) is the default everywhere. Gallons are chosen automatically
+// only where the browser region uses them: US gallons (US, Liberia, Myanmar)
+// or imperial gallons (UK).
+const REGION = ((navigator.language || '').split('-')[1] || '').toUpperCase();
+const startSys = ['US', 'LR', 'MM'].includes(REGION) ? 'us' : REGION === 'GB' ? 'imp' : 'metric';
+const startLang = (() => {
+  const list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en'];
+  for (const l of list) {
+    let c = String(l).toLowerCase().split('-')[0];
+    if (c === 'in') c = 'id';
+    if (LANGS[c]) return c;
+  }
+  return 'en';
+})();
+const state = { g: 'jadam', p: 'js', pg: { jadam: 'js', india: 'jeevamrit' }, sys: startSys, lang: 'en', offline: false, hot: false, prod: {} };
+for (const k in PRODUCTS) {
+  state.prod[k] = { size: PRODUCTS[k].def, tankL: 20, ratio: PRODUCTS[k].dil ? PRODUCTS[k].dil.def : 0 };
+}
+
+/* ------------------------------------------------------------------
+   Rendering
+   ------------------------------------------------------------------ */
+function setTagline() {
+  $('#brand-tag').textContent = tr('tagline') + (state.offline ? ' · ' + tr('offline') : '');
+}
+
+function renderAll() {
+  const P = V(state.p), S = state.prod[state.p];
+  const root = document.documentElement.style;
+  root.setProperty('--accent', P.bg);
+  root.setProperty('--on', P.tx);
+  root.setProperty('--tint', P.tint);
+
+  document.documentElement.lang = state.lang;
+  document.title = tr('title');
+  $('#brand-title').textContent = tr('title');
+  setTagline();
+  $('#lang').value = state.lang;
+
+  document.querySelectorAll('[data-sys]').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.sys === state.sys)));
+
+  $('#brand-mark').innerHTML = icon('jlf', 22, 2);
+
+  $('#groups').innerHTML = Object.keys(GROUPS).map(g =>
+    `<button type="button" class="gtab" role="tab" data-g="${g}" aria-selected="${g === state.g}">${tr('groups')[g]}</button>`).join('');
+
+  $('#products').innerHTML = GROUPS[state.g].items.map(k => {
+    const q = V(k);
+    return `<button type="button" class="pbtn" data-p="${k}" style="--bg-c:${q.bg};--tx-c:${q.tx}" aria-pressed="${k === state.p}">
+      <span class="ico">${icon(k, 20)}</span>
+      <span class="ptxt"><b>${q.label}</b><span class="nm">${q.tag}</span></span></button>`;
+  }).join('');
+
+  const metric = state.sys === 'metric';
+  const type = sizeType(P);
+  const unit = type === 'm' ? un(metric ? 'kg' : 'lb') : un(metric ? 'L' : 'gal');
+  const vunit = un(metric ? 'L' : 'gal');
+  const list = metric ? (P.picks || [1, 5, 10, 20, 50, 100, 200])
+    : (type === 'm' ? (P.picksLb || [25, 50, 100, 250, 500]) : [1, 5, 10, 25, 50, 100]);
+  const picks = list.map(v => `<button type="button" class="chip" data-l="${v / sizeFactor(P)}">${v} ${unit}</button>`).join('');
+
+  const d = P.dil;
+  const canShare = typeof navigator.share === 'function';
+
+  const method = [
+    P.steps ? `<h2>${tr('method')}</h2><ol class="steps">${P.steps.map(t => `<li>${t}</li>`).join('')}</ol>` : '',
+    P.tips ? `${P.steps ? `<h3>${P.tipsTitle}</h3>` : `<h2>${P.tipsTitle}</h2>`}<ul class="tips">${P.tips.map(t => `<li>${t}</li>`).join('')}</ul>` : ''
+  ].join('');
+
+  const sprayCard = d ? `
+    <section class="card a-spray">
+      <h2>${tr('sprayTitle')}</h2>
+      <div class="field">
+        <input id="tank" type="number" inputmode="decimal" min="0" step="any" value="${toDisp(S.tankL, volFactor())}" aria-label="${tr('tankAria', vunit)}">
+        <span class="unit">${vunit}</span>
+      </div>
+      <p class="fine" style="margin-top:6px">${tr('tankHelp')}</p>
+      <div class="ratio"><span>${tr('dilution')}</span><span id="ratio-val"></span></div>
+      <input id="ratio" type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${S.ratio}" aria-label="${tr('dilAria')}">
+      <div class="range-ends"><span>${d.min}× ${tr('stronger')}</span><span>${d.max}× ${tr('weaker')}</span></div>
+      <p class="fine">${d.note}</p>
+      <div class="stat" id="apply-out"></div>
+    </section>` : `
+    <section class="card a-spray">
+      <h2>${P.use.title}</h2>
+      <ul class="tips">${P.use.list.map(t => `<li>${t}</li>`).join('')}</ul>
+    </section>`;
+
+  $('#group-note').textContent = state.g === 'india' ? tr('indiaNote') : '';
+
+  $('#panel').innerHTML = `
+    <section class="hero a-hero">
+      <div class="hero-mark" aria-hidden="true">${icon(state.p, 170, 1.4)}</div>
+      <div class="hero-top">
+        ${P.code ? `<span class="code">${P.code}</span>` : `<span class="hero-ico">${icon(state.p, 34, 1.8)}</span>`}
+        <div><h2 class="${P.code ? '' : 'solo'}">${P.name}</h2><p>${P.role}</p></div>
+      </div>
+      <label class="hero-q" for="size">${P.sizeLabel}</label>
+      <div class="amount">
+        <input id="size" type="number" inputmode="decimal" min="0" step="any" value="${toDisp(S.size, sizeFactor(P))}">
+        <span class="unit">${unit}</span>
+      </div>
+      <div class="chips" id="chips">${picks}</div>
+      ${P.hasHot ? `<label class="check"><input type="checkbox" id="hot" ${state.hot ? 'checked' : ''}> ${tr('hot')}</label>` : ''}
+    </section>
+
+    <section class="card a-recipe">
+      <div class="card-head">
+        <h2 id="make-title"></h2>
+        <div class="actions">
+          <button type="button" class="btn" data-act="copy" aria-label="${tr('copyAria')}">${icon('copy', 18)}<span>${tr('copy')}</span></button>
+          ${canShare ? `<button type="button" class="btn" data-act="share" aria-label="${tr('shareAria')}">${icon('share', 18)}<span>${tr('share')}</span></button>` : ''}
+        </div>
+      </div>
+      <div id="make-out"></div>
+      <p class="fine" id="coverage"></p>
+      <p class="fine">${P.basisNote}</p>
+    </section>
+
+    ${sprayCard}
+
+    <section class="card a-method">${method}</section>
+
+    <section class="card safety a-safety">
+      <div class="head">${icon('warn', 24)}<h2>${tr('safety')}</h2></div>
+      <ul>${P.safety.map(t => `<li>${t}</li>`).join('')}</ul>
+    </section>
+
+    <section class="card src a-src">
+      <h2>${tr('source')}</h2>
+      <ul>${P.links.map(l => `<li><a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a></li>`).join('')}</ul>
+      ${FEEDBACK_EMAIL ? `<p class="fine">${tr('feedbackQ')}</p>
+      <button type="button" class="btn" data-act="feedback" style="margin-top:8px">${tr('feedbackBtn')}</button>` : ''}
+      <p class="disclaimer">${tr('disclaimer')}</p>
+    </section>
+  `;
+  update();
+}
+
+function update() {
+  const P = V(state.p), S = state.prod[state.p], sys = state.sys;
+
+  document.querySelectorAll('#chips .chip').forEach(c => {
+    c.setAttribute('aria-pressed', String(Math.abs(parseFloat(c.dataset.l) - S.size) < 1e-6));
+  });
+
+  const out = $('#make-out');
+  if (!(S.size > 0)) {
+    $('#make-title').textContent = tr('yourRecipe');
+    out.innerHTML = `<p class="empty">${tr('enterAmount')}</p>`;
+    $('#coverage').textContent = '';
+  } else {
+    const sz = fmt(sizeType(P), S.size, sys)[0];
+    $('#make-title').textContent = P.titleFn ? P.titleFn(sz) : tr('need', sz, P.code || P.name);
+    const scale = S.size / P.basis;
+    let html = '', last = '';
+    for (const it of P.items) {
+      const hotOn = state.hot && it.hotPer;
+      const note = hotOn ? tr('hotNote') : it.note;
+      const [a, b] = amountFor(it, scale, sys, state.hot);
+      if (it.g !== last) { html += `<h3>${it.g}</h3>`; last = it.g; }
+      html += `<div class="row"><div class="name">${it.n}${note ? `<small>${note}</small>` : ''}</div>
+               <div class="amt"><b>${a}</b><small>${b}</small></div></div>`;
+    }
+    out.innerHTML = html;
+    if (P.coverage) {
+      const acres = S.size / P.coverage.per;
+      $('#coverage').textContent = `${tr('covers', trim(acres, 1), acres)} ${P.coverage.text}`;
+    } else {
+      $('#coverage').textContent = '';
+    }
+  }
+
+  if (P.dil) {
+    $('#ratio-val').textContent = S.ratio + '× (' + trim(100 / S.ratio, 1) + '%)';
+    const ao = $('#apply-out');
+    if (!(S.tankL > 0)) {
+      ao.innerHTML = `<p class="empty">${tr('enterTank')}</p>`;
+    } else {
+      const conc = S.tankL / S.ratio;
+      const [ca, cb] = fmt('v', conc, sys);
+      const tank = fmt('v', S.tankL, sys)[0];
+      const batch = fmt('v', S.size * S.ratio, sys)[0];
+      ao.innerHTML = `
+        <div class="row"><div class="name">${tr('conc', P.code || P.name)}<small>${tr('fillTo', tank)}</small></div>
+          <div class="amt"><b>${ca}</b><small>${cb}</small></div></div>
+        <p class="fine">${tr('batchLine', fmt('v', S.size, sys)[0], batch, S.ratio)}</p>`;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------
+   Copy and share
+   ------------------------------------------------------------------ */
+function recipeText() {
+  const P = V(state.p), S = state.prod[state.p], sys = state.sys;
+  if (!(S.size > 0)) return '';
+  const scale = S.size / P.basis;
+  const lines = [`${P.name}${P.code ? ` (${P.code})` : ''}: ${fmt(sizeType(P), S.size, sys)[0]}`, ''];
+  for (const it of P.items) {
+    const [a, b] = amountFor(it, scale, sys, state.hot);
+    lines.push(`${it.n}: ${a}${b ? ` (${b})` : ''}`);
+  }
+  lines.push('', tr('recipeFoot'));
+  return lines.join('\n');
+}
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) {}
+    ta.remove();
+    return ok;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Events
+   ------------------------------------------------------------------ */
+document.addEventListener('click', async e => {
+  const gb = e.target.closest('[data-g]');
+  if (gb) { state.g = gb.dataset.g; state.p = state.pg[state.g]; renderAll(); return; }
+  const pb = e.target.closest('[data-p]');
+  if (pb) { state.p = pb.dataset.p; state.pg[state.g] = state.p; renderAll(); return; }
+  const u = e.target.closest('[data-sys]');
+  if (u) { state.sys = u.dataset.sys; renderAll(); return; }
+  const c = e.target.closest('[data-l]');
+  if (c) {
+    const P = PRODUCTS[state.p];
+    state.prod[state.p].size = parseFloat(c.dataset.l);
+    $('#size').value = toDisp(state.prod[state.p].size, sizeFactor(P));
+    update();
+    return;
+  }
+  const a = e.target.closest('[data-act]');
+  if (a && a.dataset.act === 'feedback') {
+    const P = PRODUCTS[state.p], S = state.prod[state.p];
+    const body = `Product: ${P.name}\nAmount: ${S.size} ${sizeType(P) === 'm' ? 'kg' : 'L'}\nLanguage: ${state.lang}\n\nWhat should I know?\n`;
+    location.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('Organic Farming Calculator feedback')}&body=${encodeURIComponent(body)}`;
+    return;
+  }
+  if (a) {
+    const text = recipeText();
+    if (!text) { toast(tr('enterFirst')); return; }
+    if (a.dataset.act === 'share') {
+      try { await navigator.share({ title: V(state.p).name, text }); } catch (_) {}
+    } else {
+      toast((await copyText(text)) ? tr('copied') : tr('copyFail'));
+    }
+  }
+});
+
+document.addEventListener('input', e => {
+  const P = PRODUCTS[state.p], S = state.prod[state.p];
+  const num = () => { const v = parseFloat(String(e.target.value).replace(',', '.')); return isNaN(v) ? 0 : v; };
+  if (e.target.id === 'size') { S.size = num() / sizeFactor(P); update(); }
+  else if (e.target.id === 'tank') { S.tankL = num() / volFactor(); update(); }
+  else if (e.target.id === 'ratio') { S.ratio = parseFloat(e.target.value); update(); }
+  else if (e.target.id === 'hot') { state.hot = e.target.checked; update(); }
+});
+
+// Language packs load on demand (and are saved for offline use by the service worker).
+const loadedLangs = new Set(BUILT_IN);
+function loadLang(code) {
+  return new Promise(resolve => {
+    if (loadedLangs.has(code)) return resolve();
+    const el = document.createElement('script');
+    el.src = 'lang/' + code + '.js';
+    el.onload = () => { loadedLangs.add(code); resolve(); };
+    el.onerror = () => resolve();
+    document.head.appendChild(el);
+  });
+}
+async function setLang(code) {
+  await loadLang(code);
+  state.lang = UI[code] ? code : 'en';
+  renderAll();
+}
+document.addEventListener('change', e => {
+  if (e.target.id === 'lang') setLang(e.target.value);
+});
+
+// language menu
+$('#lang').innerHTML = Object.keys(LANGS).map(k => `<option value="${k}">${LANGS[k]}</option>`).join('');
+
+renderAll();
+if (startLang !== 'en') setLang(startLang);
+
+/* ------------------------------------------------------------------
+   Offline support: once the page has been opened online, a service
+   worker keeps a copy so it works with no signal (needs https hosting).
+   ------------------------------------------------------------------ */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.ready.then(() => { state.offline = true; setTagline(); });
+}
+</script>
+</body>
+</html>
